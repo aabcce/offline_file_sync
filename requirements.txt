@@ -1,0 +1,4 @@
+oslo_config
+oslo_log
+pysqlite
+django

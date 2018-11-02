@@ -1,0 +1,292 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Screen</title>
+    <script language="JavaScript" src="{% static 'exportfile/jquery.min.js' %}"></script>
+    <script language="JavaScript">
+
+function Base64() {
+
+    // private property
+    _keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+    // public method for encoding
+    this.encode = function (input) {
+        var output = "";
+        var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
+        var i = 0;
+        input = _utf8_encode(input);
+        while (i < input.length) {
+            chr1 = input.charCodeAt(i++);
+            chr2 = input.charCodeAt(i++);
+            chr3 = input.charCodeAt(i++);
+            enc1 = chr1 >> 2;
+            enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+            enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+            enc4 = chr3 & 63;
+            if (isNaN(chr2)) {
+                enc3 = enc4 = 64;
+            } else if (isNaN(chr3)) {
+                enc4 = 64;
+            }
+            output = output +
+            _keyStr.charAt(enc1) + _keyStr.charAt(enc2) +
+            _keyStr.charAt(enc3) + _keyStr.charAt(enc4);
+        }
+        return output;
+    }
+
+    // public method for decoding
+    this.decode = function (input) {
+        var output = "";
+        var chr1, chr2, chr3;
+        var enc1, enc2, enc3, enc4;
+        var i = 0;
+        input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+        while (i < input.length) {
+            enc1 = _keyStr.indexOf(input.charAt(i++));
+            enc2 = _keyStr.indexOf(input.charAt(i++));
+            enc3 = _keyStr.indexOf(input.charAt(i++));
+            enc4 = _keyStr.indexOf(input.charAt(i++));
+            chr1 = (enc1 << 2) | (enc2 >> 4);
+            chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+            chr3 = ((enc3 & 3) << 6) | enc4;
+            output = output + String.fromCharCode(chr1);
+            if (enc3 != 64) {
+                output = output + String.fromCharCode(chr2);
+            }
+            if (enc4 != 64) {
+                output = output + String.fromCharCode(chr3);
+            }
+        }
+        output = _utf8_decode(output);
+        return output;
+    }
+
+    // private method for UTF-8 encoding
+    _utf8_encode = function (string) {
+        string = string.replace(/\r\n/g,"\n");
+        var utftext = "";
+        for (var n = 0; n < string.length; n++) {
+            var c = string.charCodeAt(n);
+            if (c < 128) {
+                utftext += String.fromCharCode(c);
+            } else if((c > 127) && (c < 2048)) {
+                utftext += String.fromCharCode((c >> 6) | 192);
+                utftext += String.fromCharCode((c & 63) | 128);
+            } else {
+                utftext += String.fromCharCode((c >> 12) | 224);
+                utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+                utftext += String.fromCharCode((c & 63) | 128);
+            }
+
+        }
+        return utftext;
+    }
+
+    // private method for UTF-8 decoding
+    _utf8_decode = function (utftext) {
+        var string = "";
+        var i = 0;
+        var c = c1 = c2 = 0;
+        while ( i < utftext.length ) {
+            c = utftext.charCodeAt(i);
+            if (c < 128) {
+                string += String.fromCharCode(c);
+                i++;
+            } else if((c > 191) && (c < 224)) {
+                c2 = utftext.charCodeAt(i+1);
+                string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
+                i += 2;
+            } else {
+                c2 = utftext.charCodeAt(i+1);
+                c3 = utftext.charCodeAt(i+2);
+                string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
+                i += 3;
+            }
+        }
+        return string;
+    }
+}
+
+function render_error_state(state){
+    // # ERROR_STATE
+    // # 1 folder is not readable
+    // # 2 file is not exist
+    // # 3 file is not readable
+    // # 4 file is not readable
+
+    if(state == "1"){
+        return "Folder is not readable";
+    }else if(state == "2"){
+        return "File is not exist";
+    }else if(state == "3"){
+        return "File is not readable";
+    }else if(state == "4"){
+        return "File is not readable";
+    }
+
+    return '';
+
+}
+
+function render_timestamp(time){
+    var datetime = new Date();
+         datetime.setTime(time);
+         var year = datetime.getFullYear();
+         var month = datetime.getMonth() + 1;
+         var date = datetime.getDate();
+         var hour = datetime.getHours();
+         var minute = datetime.getMinutes();
+         var second = datetime.getSeconds();
+         var mseconds = datetime.getMilliseconds();
+         return year + "-" + month + "-" + date+" "+hour+":"+minute+":"+second+"."+mseconds;
+}
+
+ function renderTable(tbl, data){
+    var tbody = $(tbl).children('tbody');
+    tbody.empty();
+    $(data).each(function(index, item){
+        tbody.append(""+
+        "<tr>"+
+        "        <td>"+
+        "            <input type=\"checkbox\" name=\"id\" value=\""+ item['ID'] +"\" ></input>"+
+        "        </td>"+
+        "        <td>"+ new Base64().decode(item['FOLDER']) +
+        "        </td>"+
+        "        <td>"+ new Base64().decode(item['FILE']) +
+        "        </td>"+
+        "        <td>"+ render_error_state(item['ERROR_STATE']) +
+        "        </td>"+
+        "        <td>"+render_timestamp(item['CTMP']) +
+        "        </td>"+
+        "        <td>"+ render_timestamp(item['MTMP']) +
+        "        </td>"+
+        "        <td>"+item['FSIZE'] +
+        "        </td>"+
+        "       <td>"+item['HASH'] +
+        "        </td>"+
+        "</tr>"+
+        "");
+
+    });
+
+ }
+
+ function loadSqliteData(){
+
+     $.ajax({
+        url:"list",
+        dateType:"json",
+        success: function(data){
+            if(data['code']){
+               alert(data['msg']);
+               return;
+            }
+            renderTable(document.getElementById('file_table1'), data);
+        },
+        error:function(err){
+            alert('failed to load data!');
+        }
+     })
+
+
+ }
+
+$(document).ready(function(event){
+    loadSqliteData();
+});
+
+function check_all_items(){
+    boxes = $("input[name='id']");
+    boxes.attr("checked", 'checked');
+    //boxes.attr("checked", true);
+}
+
+function uncheck_all_items(){
+    boxes = $("input[name='id']");
+    boxes.removeAttr("checked");
+    //boxes.attr("checked", false);
+}
+
+function delete_checked_items(){
+    if(prompt("Are you sure to delete these items? Input OK to confirm") != "OK"){
+        return;
+    }
+
+    checked_boxes = $("input[name='id']:checked");
+
+     var arr = [];
+     $("input[type='checkbox']:checked").each(function (index, item) {//
+        arr.push($(this).val());
+     });
+
+    $.ajax({
+        url:"doDelete",
+        data:{id:arr},
+        dataType:"json",
+        success: function(data){
+            if(data['code']){
+               alert(data['msg']);
+               return;
+            }else{
+                loadSqliteData();
+            }
+        },
+        error:function(err){
+            alert('Delete data failed!');
+        }
+     });
+
+}
+
+    </script>
+</head>
+<body>
+
+<div style="margin: 0px auto;">
+    <div>
+        <input type="button" name="check_all" onclick="check_all_items()">Check All</input> &nbsp;&nbsp;&nbsp;&nbsp;
+        <input type="button" name="uncheck_all" onclick="uncheck_all_items()">Uncheck All</input> &nbsp;&nbsp;&nbsp;&nbsp;
+        <input type="button" name="delete_checked" onclick="delete_checked_items()" value="Delete checked items"></input>
+    </div>
+    <table id="file_table1" border="1" cellpadding="0" cellspacing="0">
+        <thead style="background-color:grey;">
+            <tr>
+                <td style="width:80px;">
+                    ID
+                </td>
+                <td>
+                    Folder
+                </td>
+                <td>
+                    File
+                </td>
+                <td>
+                    Error State
+                </td>
+                <td>
+                    Created
+                </td>
+                <td>
+                    Last Modified
+                </td>
+                <td>
+                    Size
+                </td>
+                <td>
+                    Hash
+                </td>
+            </tr>
+
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,25 @@
+[DEFAULT]
+debug=True
+verbose=True
+log_dir=./logs/
+use_syslog=True
+use_syslog_rfc_format=True
+syslog_log_facility=LOG_LOCAL0
+use_stderr=False
+
+[export_file_list]
+includes="D:/"
+# regex
+excludes="D:/PycharmProjects/.*"
+export_sqlite_db=E:/a.db
+
+[compare_file_list]
+src_sqlite_file=/vagrant/a.db
+dest_sqlite_file=/vagrant/b.db
+result_sqlite_file=/vagrant/c.db
+max_compare_group_size=500
+
+[backup_file_list]
+incremental_sqlite_file=E:/c.db
+zip_file=True
+backup_target=E:/DDriver.zip
